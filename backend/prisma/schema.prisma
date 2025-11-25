@@ -1,0 +1,416 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  MANAGER
+  OPERATOR
+}
+
+enum VehicleType {
+  CAR
+  MOTORCYCLE
+  TRUCK
+  SUV
+  VAN
+  OTHER
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum AppointmentOrigin {
+  MANUAL
+  FOLLOW_UP
+}
+
+enum WorkOrderStatus {
+  BUDGET
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum PaymentMethod {
+  PIX
+  DEBIT
+  CREDIT
+  CASH
+  BOLETO
+  OTHER
+}
+
+enum PayableCategory {
+  FIXED
+  VARIABLE
+}
+
+enum FinancialStatus {
+  PENDING
+  PAID
+  OVERDUE
+  RECEIVED
+  PARTIAL
+}
+
+enum FollowUpStatus {
+  PENDING
+  IN_CONTACT
+  DONE
+  NO_RESPONSE
+}
+
+model Company {
+  id              String         @id @default(uuid())
+  nomeFantasia    String
+  razaoSocial     String?
+  cnpj            String?        @unique
+  telefone        String?
+  whatsapp        String?
+  email           String?
+  endereco        String?
+  logoUrl         String?
+  themePrimary    String?        @default("#0F172A")
+  themeSecondary  String?        @default("#22C55E")
+  themeBackground String?        @default("#F8FAFC")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  users           User[]
+  clients         Client[]
+  vehicles        Vehicle[]
+  services        Service[]
+  appointments    Appointment[]
+  workOrders      WorkOrder[]
+  spaces          Space[]
+  spaceBookings   SpaceBooking[]
+  accountsPayable AccountPayable[]
+  accountsRecv    AccountReceivable[]
+  followUps       FollowUp[]
+  notifications   Notification[]
+  checklists      PhotoChecklist[]
+  payments        Payment[]
+}
+
+model User {
+  id         String   @id @default(uuid())
+  companyId  String
+  name       String
+  email      String
+  phone      String?
+  whatsapp   String?
+  role       UserRole @default(OPERATOR)
+  password   String
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company    Company  @relation(fields: [companyId], references: [id])
+  notifications Notification[]
+
+  @@unique([companyId, email])
+  @@index([companyId])
+}
+
+model Client {
+  id           String    @id @default(uuid())
+  companyId    String
+  name         String
+  whatsapp     String?
+  phone        String?
+  email        String?
+  cpfCnpj      String?
+  street       String?
+  number       String?
+  district     String?
+  city         String?
+  state        String?
+  zip          String?
+  notes        String?
+  tags         String[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  company      Company   @relation(fields: [companyId], references: [id])
+  vehicles     Vehicle[]
+  workOrders   WorkOrder[]
+  accountsRecv AccountReceivable[]
+  followUps    FollowUp[]
+  appointments Appointment[]
+
+  @@index([companyId, name])
+  @@index([companyId, whatsapp])
+}
+
+model Vehicle {
+  id        String       @id @default(uuid())
+  companyId String
+  clientId  String
+  type      VehicleType  @default(CAR)
+  plate     String
+  brand     String
+  model     String
+  year      Int?
+  color     String?
+  vin       String?
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  company   Company      @relation(fields: [companyId], references: [id])
+  client    Client       @relation(fields: [clientId], references: [id])
+  workOrders WorkOrder[]
+  appointments Appointment[]
+
+  @@unique([companyId, plate])
+  @@index([companyId])
+}
+
+model Service {
+  id               String    @id @default(uuid())
+  companyId        String
+  name             String
+  description      String?
+  category         String?
+  estimatedMinutes Int?
+  basePrice        Decimal   @db.Decimal(10, 2)
+  active           Boolean   @default(true)
+  followUpEnabled  Boolean   @default(false)
+  followUpDays     Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  company          Company   @relation(fields: [companyId], references: [id])
+  appointmentItems AppointmentService[]
+  workOrderItems   WorkOrderItem[]
+  followUps        FollowUp[]
+
+  @@index([companyId, active])
+}
+
+model Appointment {
+  id             String             @id @default(uuid())
+  companyId      String
+  clientId       String
+  vehicleId      String?
+  startAt        DateTime
+  endAt          DateTime
+  status         AppointmentStatus  @default(SCHEDULED)
+  origin         AppointmentOrigin  @default(MANUAL)
+  notes          String?
+  responsibleId  String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  company        Company            @relation(fields: [companyId], references: [id])
+  client         Client             @relation(fields: [clientId], references: [id])
+  vehicle        Vehicle?           @relation(fields: [vehicleId], references: [id])
+  workOrder      WorkOrder?
+  services       AppointmentService[]
+  checklists     PhotoChecklist[]
+  spaceBookings  SpaceBooking[]
+
+  @@index([companyId, startAt])
+}
+
+model AppointmentService {
+  appointmentId String
+  serviceId     String
+  quantity      Int      @default(1)
+
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  service       Service     @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@id([appointmentId, serviceId])
+}
+
+model Space {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  type      String?
+  status    String    @default("AVAILABLE")
+
+  company   Company  @relation(fields: [companyId], references: [id])
+  bookings  SpaceBooking[]
+
+  @@unique([companyId, name])
+}
+
+model SpaceBooking {
+  id            String   @id @default(uuid())
+  companyId     String
+  spaceId       String
+  appointmentId String?
+  workOrderId   String?
+  startAt       DateTime
+  endAt         DateTime
+
+  company       Company     @relation(fields: [companyId], references: [id])
+  space         Space       @relation(fields: [spaceId], references: [id])
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  workOrder     WorkOrder?  @relation(fields: [workOrderId], references: [id])
+
+  @@index([companyId, startAt])
+}
+
+model WorkOrder {
+  id              String           @id @default(uuid())
+  companyId       String
+  sequential      Int
+  clientId        String
+  vehicleId       String?
+  appointmentId   String?        @unique
+  status          WorkOrderStatus  @default(BUDGET)
+  totalGross      Decimal          @db.Decimal(10, 2)
+  discountTotal   Decimal          @db.Decimal(10, 2) @default(0)
+  totalNet        Decimal          @db.Decimal(10, 2)
+  paymentTerm     String?
+  openedAt        DateTime         @default(now())
+  closedAt        DateTime?
+  responsibleId   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  company         Company          @relation(fields: [companyId], references: [id])
+  client          Client           @relation(fields: [clientId], references: [id])
+  vehicle         Vehicle?         @relation(fields: [vehicleId], references: [id])
+  appointment     Appointment?     @relation(fields: [appointmentId], references: [id])
+  items           WorkOrderItem[]
+  payments        Payment[]
+  accountsRecv    AccountReceivable[]
+  followUps       FollowUp[]
+  checklists      PhotoChecklist[]
+  spaceBookings   SpaceBooking[]
+
+  @@index([companyId, sequential])
+  @@unique([companyId, sequential])
+}
+
+model WorkOrderItem {
+  id          String   @id @default(uuid())
+  workOrderId String
+  serviceId   String
+  quantity    Int      @default(1)
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  discount    Decimal  @db.Decimal(10, 2) @default(0)
+  total       Decimal  @db.Decimal(10, 2)
+
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  service     Service   @relation(fields: [serviceId], references: [id])
+
+  @@index([workOrderId])
+}
+
+model Payment {
+  id                 String         @id @default(uuid())
+  companyId          String
+  workOrderId        String
+  method             PaymentMethod
+  amount             Decimal        @db.Decimal(10, 2)
+  paidAt             DateTime       @default(now())
+  installmentNumber  Int?
+  totalInstallments  Int?
+
+  company            Company        @relation(fields: [companyId], references: [id])
+  workOrder          WorkOrder      @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model AccountPayable {
+  id           String           @id @default(uuid())
+  companyId    String
+  description  String
+  category     PayableCategory  @default(FIXED)
+  expected     Decimal          @db.Decimal(10, 2)
+  paid         Decimal?         @db.Decimal(10, 2)
+  dueDate      DateTime
+  paidDate     DateTime?
+  supplier     String?
+  status       FinancialStatus  @default(PENDING)
+
+  company      Company          @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, dueDate])
+}
+
+model AccountReceivable {
+  id           String           @id @default(uuid())
+  companyId    String
+  clientId     String?
+  workOrderId  String?
+  expected     Decimal          @db.Decimal(10, 2)
+  received     Decimal?         @db.Decimal(10, 2)
+  expectedDate DateTime
+  receivedDate DateTime?
+  status       FinancialStatus  @default(PENDING)
+
+  company      Company          @relation(fields: [companyId], references: [id])
+  client       Client?          @relation(fields: [clientId], references: [id])
+  workOrder    WorkOrder?       @relation(fields: [workOrderId], references: [id])
+
+  @@index([companyId, expectedDate])
+}
+
+model FollowUp {
+  id           String          @id @default(uuid())
+  companyId    String
+  clientId     String
+  workOrderId  String
+  serviceId    String?
+  contactAt    DateTime
+  status       FollowUpStatus  @default(PENDING)
+  notes        String?
+
+  company      Company         @relation(fields: [companyId], references: [id])
+  client       Client          @relation(fields: [clientId], references: [id])
+  workOrder    WorkOrder       @relation(fields: [workOrderId], references: [id])
+  service      Service?        @relation(fields: [serviceId], references: [id])
+
+  @@index([companyId, contactAt])
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  companyId  String
+  userId     String?
+  title      String
+  message    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  company    Company  @relation(fields: [companyId], references: [id])
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([companyId, createdAt])
+}
+
+model PhotoChecklist {
+  id             String       @id @default(uuid())
+  companyId      String
+  workOrderId    String?
+  appointmentId  String?
+  checkinAt      DateTime     @default(now())
+  customerNotes  String?
+  attendantNotes String?
+  photos         Json
+
+  company        Company      @relation(fields: [companyId], references: [id])
+  workOrder      WorkOrder?   @relation(fields: [workOrderId], references: [id])
+  appointment    Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([companyId, checkinAt])
+}
