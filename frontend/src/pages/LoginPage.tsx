@@ -21,7 +21,7 @@ type LoginResponse = {
 export function LoginPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
-  const [form, setForm] = useState({ email: '', password: '', companyId: '' });
+  const [form, setForm] = useState({ email: '', password: '' });
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: async () => {
@@ -80,16 +80,9 @@ export function LoginPage() {
               value={form.password}
               onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
             />
-            <Input
-              label="ID da empresa"
-              placeholder="companyId"
-              required
-              value={form.companyId}
-              onChange={(e) => setForm((f) => ({ ...f, companyId: e.target.value }))}
-            />
             {error && (
               <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-                Não foi possível autenticar. Verifique e-mail, senha e empresa.
+                Não foi possível autenticar. Verifique e-mail e senha.
               </div>
             )}
             <Button type="submit" className="w-full" disabled={isPending}>
@@ -98,7 +91,7 @@ export function LoginPage() {
           </form>
           <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
             <p className="font-semibold text-slate-800">API de autenticação</p>
-            <p>POST /auth/login → {`{ email, password, companyId }`}</p>
+            <p>POST /auth/login → {`{ email, password }`}</p>
           </div>
         </div>
       </div>

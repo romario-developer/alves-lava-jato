@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, Delete } from '@nestjs/common';
 import { WorkOrdersService } from './work-orders.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentCompany } from '../common/decorators/current-company.decorator';
@@ -53,5 +53,10 @@ export class WorkOrdersController {
     @Body() body: AddPaymentDto,
   ) {
     return this.workOrdersService.addPayment(companyId, id, body);
+  }
+
+  @Delete(':id')
+  delete(@CurrentCompany() companyId: string, @Param('id') id: string) {
+    return this.workOrdersService.delete(companyId, id);
   }
 }

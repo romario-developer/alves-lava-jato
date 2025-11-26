@@ -3,10 +3,13 @@ import { useAuthStore } from '../store/auth';
 import { Button } from '../components/ui/Button';
 
 const navItems = [
-  { to: '/', label: 'Dashboard' },
+  { to: '/', label: 'Home' },
+  { to: '/dashboard', label: 'Dashboard' },
   { to: '/clients', label: 'Clientes' },
   { to: '/services', label: 'Serviços' },
   { to: '/work-orders', label: 'OS' },
+  { to: '/financial', label: 'Financeiro' },
+  { to: '/spaces', label: 'Vagas' },
 ];
 
 export function AppLayout() {

@@ -45,3 +45,53 @@ export type Appointment = {
   vehicle?: Vehicle;
   services: Array<{ service: { name: string } }>;
 };
+
+export type Payable = {
+  id: string;
+  description: string;
+  category: string;
+  expected: number;
+  paid?: number | null;
+  dueDate: string;
+  paidDate?: string | null;
+  supplier?: string | null;
+  status: string;
+};
+
+export type Receivable = {
+  id: string;
+  expected: number;
+  received?: number | null;
+  expectedDate: string;
+  receivedDate?: string | null;
+  status: string;
+  client?: { id: string; name: string } | null;
+  workOrder?: { id: string; sequential: number } | null;
+};
+
+export type FollowUp = {
+  id: string;
+  contactAt: string;
+  status: string;
+  client: { id: string; name: string; whatsapp?: string | null };
+  workOrder: { id: string; sequential: number };
+  service?: { id: string; name: string } | null;
+};
+
+export type OnboardingStatus = {
+  completed: boolean;
+  data?: {
+    ramoAtuacao: string[];
+    qtdFuncionarios?: string;
+    faturamentoMensal?: string;
+    prioridade?: string;
+    comoConheceu?: string;
+    completedAt?: string;
+  };
+};
+
+export type Service = {
+  id: string;
+  name: string;
+  basePrice: number;
+};

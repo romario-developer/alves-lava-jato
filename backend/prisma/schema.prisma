@@ -72,6 +72,11 @@ enum FollowUpStatus {
   NO_RESPONSE
 }
 
+enum SpaceOccupationStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
 model Company {
   id              String         @id @default(uuid())
   nomeFantasia    String
@@ -102,6 +107,8 @@ model Company {
   notifications   Notification[]
   checklists      PhotoChecklist[]
   payments        Payment[]
+  onboarding      CompanyOnboarding?
+  spaceOccupations SpaceOccupation[]
 }
 
 model User {
@@ -221,6 +228,7 @@ model Appointment {
   services       AppointmentService[]
   checklists     PhotoChecklist[]
   spaceBookings  SpaceBooking[]
+  spaceOccupations SpaceOccupation[]
 
   @@index([companyId, startAt])
 }
@@ -245,6 +253,7 @@ model Space {
 
   company   Company  @relation(fields: [companyId], references: [id])
   bookings  SpaceBooking[]
+  occupations SpaceOccupation[]
 
   @@unique([companyId, name])
 }
@@ -294,6 +303,7 @@ model WorkOrder {
   followUps       FollowUp[]
   checklists      PhotoChecklist[]
   spaceBookings   SpaceBooking[]
+  spaceOccupations SpaceOccupation[]
 
   @@index([companyId, sequential])
   @@unique([companyId, sequential])
@@ -413,4 +423,38 @@ model PhotoChecklist {
   appointment    Appointment? @relation(fields: [appointmentId], references: [id])
 
   @@index([companyId, checkinAt])
+}
+
+model SpaceOccupation {
+  id              String                  @id @default(uuid())
+  companyId       String
+  spaceId         String
+  workOrderId     String?
+  appointmentId   String?
+  startedAt       DateTime                @default(now())
+  expectedEndAt   DateTime?
+  endedAt         DateTime?
+  status          SpaceOccupationStatus   @default(IN_PROGRESS)
+
+  company         Company                 @relation(fields: [companyId], references: [id])
+  space           Space                   @relation(fields: [spaceId], references: [id])
+  workOrder       WorkOrder?              @relation(fields: [workOrderId], references: [id])
+  appointment     Appointment?            @relation(fields: [appointmentId], references: [id])
+
+  @@index([companyId, startedAt])
+}
+
+model CompanyOnboarding {
+  id                String   @id @default(uuid())
+  companyId         String   @unique
+  ramoAtuacao       String[]
+  qtdFuncionarios   String?
+  faturamentoMensal String?
+  prioridade        String?
+  comoConheceu      String?
+  completedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company           Company  @relation(fields: [companyId], references: [id])
 }

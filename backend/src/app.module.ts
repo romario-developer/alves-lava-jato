@@ -8,6 +8,11 @@ import { ClientsModule } from './clients/clients.module';
 import { ServicesModule } from './services/services.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { WorkOrdersModule } from './work-orders/work-orders.module';
+import { FinancialModule } from './financial/financial.module';
+import { FollowUpsModule } from './follow-ups/follow-ups.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
+import { SpacesModule } from './spaces/spaces.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -22,6 +27,11 @@ import { AppService } from './app.service';
     ServicesModule,
     AppointmentsModule,
     WorkOrdersModule,
+    FinancialModule,
+    FollowUpsModule,
+    OnboardingModule,
+    SpacesModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

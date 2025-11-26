@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWorkOrderDto } from './dto/create-work-order.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -21,7 +21,7 @@ export class WorkOrdersService {
       where: { id: { in: serviceIds }, companyId },
     });
     if (countServices !== serviceIds.length) {
-      throw new NotFoundException('Algum serviço não pertence à empresa');
+      throw new NotFoundException('Algum servico nao pertence a empresa');
     }
 
     const sequential = await this.nextSequential(companyId);
@@ -120,8 +120,20 @@ export class WorkOrdersService {
         followUps: true,
       },
     });
-    if (!workOrder) throw new NotFoundException('OS não encontrada');
+    if (!workOrder) throw new NotFoundException('OS nao encontrada');
     return workOrder;
+  }
+
+  async delete(companyId: string, id: string) {
+    const workOrder = await this.prisma.workOrder.findFirst({
+      where: { id, companyId },
+    });
+    if (!workOrder) throw new NotFoundException('OS nao encontrada');
+    if (workOrder.status === WorkOrderStatus.COMPLETED) {
+      throw new ForbiddenException('Nao e possivel excluir uma OS concluida');
+    }
+    await this.prisma.workOrder.delete({ where: { id } });
+    return { deleted: true };
   }
 
   async updateStatus(companyId: string, id: string, dto: UpdateWorkOrderStatusDto) {
@@ -129,7 +141,7 @@ export class WorkOrdersService {
       where: { id, companyId },
       include: { items: { include: { service: true } } },
     });
-    if (!workOrder) throw new NotFoundException('OS não encontrada');
+    if (!workOrder) throw new NotFoundException('OS nao encontrada');
 
     const updated = await this.prisma.workOrder.update({
       where: { id },
@@ -163,17 +175,17 @@ export class WorkOrdersService {
 
   private async ensureClient(companyId: string, clientId: string) {
     const client = await this.prisma.client.findFirst({ where: { id: clientId, companyId } });
-    if (!client) throw new NotFoundException('Cliente não encontrado');
+    if (!client) throw new NotFoundException('Cliente nao encontrado');
   }
 
   private async ensureVehicle(companyId: string, vehicleId: string) {
     const vehicle = await this.prisma.vehicle.findFirst({ where: { id: vehicleId, companyId } });
-    if (!vehicle) throw new NotFoundException('Veículo não encontrado');
+    if (!vehicle) throw new NotFoundException('Veiculo nao encontrado');
   }
 
   private async ensureWorkOrder(companyId: string, id: string) {
     const workOrder = await this.prisma.workOrder.findFirst({ where: { id, companyId } });
-    if (!workOrder) throw new NotFoundException('OS não encontrada');
+    if (!workOrder) throw new NotFoundException('OS nao encontrada');
   }
 
   private async nextSequential(companyId: string) {

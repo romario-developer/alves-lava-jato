@@ -16,20 +16,38 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async validateUser(email: string, password: string, companyId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { email, companyId, active: true },
-    });
-    if (!user) {
-      throw new UnauthorizedException('Credenciais inválidas');
+  async validateUser(email: string, password: string, companyId?: string) {
+    let user: {
+      id: string;
+      companyId: string;
+      role: string;
+      email: string;
+      name: string;
+      password: string;
+      active: boolean;
+    } | null = null;
+    if (companyId) {
+      user = await this.prisma.user.findFirst({
+        where: { email, companyId, active: true },
+      });
+      if (!user) throw new UnauthorizedException('Credenciais inválidas (empresa)');
+    } else {
+      const users = await this.prisma.user.findMany({
+        where: { email, active: true },
+      });
+      if (users.length === 0) throw new UnauthorizedException('Credenciais inválidas');
+      if (users.length > 1) {
+        throw new UnauthorizedException('E-mail vinculado a mais de uma empresa. Informe o companyId.');
+      }
+      user = users[0];
     }
 
-    const passwordMatches = await bcrypt.compare(password, user.password);
+    const passwordMatches = await bcrypt.compare(password, user!.password);
     if (!passwordMatches) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    return user;
+    return user!;
   }
 
   async login(data: LoginDto) {
